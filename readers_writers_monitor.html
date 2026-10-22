@@ -1,0 +1,125 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Readers-Writers (Monitor)</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:0;background:#0f172a;color:#e2e8f0}
+header{padding:12px 20px;background:#1e293b;font-size:18px;font-weight:600}
+.ctl{padding:10px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button,select{background:#334155;color:#e2e8f0;border:0;padding:6px 14px;border-radius:6px;cursor:pointer}
+input[type=range]{flex:1;min-width:200px}
+main{display:flex;flex-wrap:wrap;gap:16px;padding:0 20px 20px}
+#stage{flex:2 1 460px;background:#1e293b;border-radius:10px;padding:14px;min-height:380px}
+#log{flex:1 1 300px;background:#1e293b;border-radius:10px;padding:12px;height:440px;overflow:auto;font:12px monospace}
+.card{display:inline-block;width:120px;margin:6px;padding:10px;border-radius:8px;text-align:center;color:#0f172a;font-weight:600}
+.res{margin:14px 6px;padding:14px;border-radius:8px;border:2px solid #475569;font-size:15px}
+.legend span{display:inline-block;margin-right:10px;font-size:12px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
+.last{background:#334155}
+</style></head><body>
+<header>Readers-Writers (Monitor)</header>
+<div class="ctl">
+ <button id="play">Play</button><button id="step">Step</button><button id="reset">Reset</button>
+ Speed <select id="speed"><option value="1">1x</option><option value="2">2x</option>
+ <option value="5">5x</option><option value=".5">0.5x</option></select>
+ <input type="range" id="slider" min="0" value="0">
+ <span id="clock"></span>
+</div>
+<main><div id="stage"></div><div id="log"></div></main>
+<script>
+const DATA = {"title": "Readers-Writers (Monitor)", "mode": "rw", "actors": ["R1", "R2", "R3", "R4", "W1", "W2"], "forks": 0, "events": [{"seq": 0, "t": 0.01, "actor": "R1", "kind": "state", "state": "thinking"}, {"seq": 1, "t": 0.011, "actor": "R2", "kind": "state", "state": "thinking"}, {"seq": 2, "t": 0.012, "actor": "R3", "kind": "state", "state": "thinking"}, {"seq": 3, "t": 0.013, "actor": "R4", "kind": "state", "state": "thinking"}, {"seq": 4, "t": 0.014, "actor": "W1", "kind": "state", "state": "thinking"}, {"seq": 5, "t": 0.015, "actor": "W2", "kind": "state", "state": "thinking"}, {"seq": 6, "t": 0.073, "actor": "R2", "kind": "state", "state": "waiting"}, {"seq": 7, "t": 0.073, "actor": "R2", "kind": "state", "state": "reading"}, {"seq": 8, "t": 0.073, "actor": "R2", "kind": "access", "action": "read", "value": 0}, {"seq": 9, "t": 0.112, "actor": "W1", "kind": "state", "state": "waiting"}, {"seq": 10, "t": 0.143, "actor": "R2", "kind": "state", "state": "thinking"}, {"seq": 11, "t": 0.143, "actor": "R2", "kind": "state", "state": "thinking"}, {"seq": 12, "t": 0.143, "actor": "W1", "kind": "state", "state": "writing"}, {"seq": 13, "t": 0.196, "actor": "R1", "kind": "state", "state": "waiting"}, {"seq": 14, "t": 0.207, "actor": "R2", "kind": "state", "state": "waiting"}, {"seq": 15, "t": 0.232, "actor": "R3", "kind": "state", "state": "waiting"}, {"seq": 16, "t": 0.254, "actor": "W2", "kind": "state", "state": "waiting"}, {"seq": 17, "t": 0.267, "actor": "R4", "kind": "state", "state": "waiting"}, {"seq": 18, "t": 0.428, "actor": "W1", "kind": "access", "action": "write", "value": 1}, {"seq": 19, "t": 0.428, "actor": "W1", "kind": "state", "state": "thinking"}, {"seq": 20, "t": 0.428, "actor": "W1", "kind": "state", "state": "thinking"}, {"seq": 21, "t": 0.428, "actor": "W2", "kind": "state", "state": "writing"}, {"seq": 22, "t": 0.629, "actor": "W2", "kind": "access", "action": "write", "value": 2}, {"seq": 23, "t": 0.629, "actor": "W2", "kind": "state", "state": "thinking"}, {"seq": 24, "t": 0.629, "actor": "W2", "kind": "state", "state": "thinking"}, {"seq": 25, "t": 0.629, "actor": "R2", "kind": "state", "state": "reading"}, {"seq": 26, "t": 0.629, "actor": "R2", "kind": "access", "action": "read", "value": 2}, {"seq": 27, "t": 0.629, "actor": "R3", "kind": "state", "state": "reading"}, {"seq": 28, "t": 0.629, "actor": "R3", "kind": "access", "action": "read", "value": 2}, {"seq": 29, "t": 0.63, "actor": "R1", "kind": "state", "state": "reading"}, {"seq": 30, "t": 0.63, "actor": "R1", "kind": "access", "action": "read", "value": 2}, {"seq": 31, "t": 0.631, "actor": "R4", "kind": "state", "state": "reading"}, {"seq": 32, "t": 0.631, "actor": "R4", "kind": "access", "action": "read", "value": 2}, {"seq": 33, "t": 0.709, "actor": "W1", "kind": "state", "state": "waiting"}, {"seq": 34, "t": 0.777, "actor": "R4", "kind": "state", "state": "thinking"}, {"seq": 35, "t": 0.777, "actor": "R4", "kind": "state", "state": "thinking"}, {"seq": 36, "t": 0.786, "actor": "R3", "kind": "state", "state": "thinking"}, {"seq": 37, "t": 0.786, "actor": "R3", "kind": "state", "state": "thinking"}, {"seq": 38, "t": 0.809, "actor": "R1", "kind": "state", "state": "thinking"}, {"seq": 39, "t": 0.809, "actor": "R1", "kind": "state", "state": "thinking"}, {"seq": 40, "t": 0.851, "actor": "W2", "kind": "state", "state": "waiting"}, {"seq": 41, "t": 0.851, "actor": "R3", "kind": "state", "state": "waiting"}, {"seq": 42, "t": 0.892, "actor": "R1", "kind": "state", "state": "waiting"}, {"seq": 43, "t": 0.909, "actor": "R2", "kind": "state", "state": "thinking"}, {"seq": 44, "t": 0.909, "actor": "R2", "kind": "state", "state": "thinking"}, {"seq": 45, "t": 0.909, "actor": "W1", "kind": "state", "state": "writing"}, {"seq": 46, "t": 0.924, "actor": "R4", "kind": "state", "state": "waiting"}, {"seq": 47, "t": 1.086, "actor": "W1", "kind": "access", "action": "write", "value": 3}, {"seq": 48, "t": 1.086, "actor": "W1", "kind": "state", "state": "thinking"}, {"seq": 49, "t": 1.086, "actor": "W1", "kind": "state", "state": "thinking"}, {"seq": 50, "t": 1.086, "actor": "W2", "kind": "state", "state": "writing"}, {"seq": 51, "t": 1.097, "actor": "R2", "kind": "state", "state": "waiting"}, {"seq": 52, "t": 1.24, "actor": "W1", "kind": "state", "state": "waiting"}, {"seq": 53, "t": 1.303, "actor": "W2", "kind": "access", "action": "write", "value": 4}, {"seq": 54, "t": 1.303, "actor": "W2", "kind": "state", "state": "thinking"}, {"seq": 55, "t": 1.303, "actor": "W2", "kind": "state", "state": "thinking"}, {"seq": 56, "t": 1.303, "actor": "W1", "kind": "state", "state": "writing"}, {"seq": 57, "t": 1.372, "actor": "W2", "kind": "state", "state": "waiting"}, {"seq": 58, "t": 1.531, "actor": "W1", "kind": "access", "action": "write", "value": 5}, {"seq": 59, "t": 1.531, "actor": "W1", "kind": "state", "state": "thinking"}, {"seq": 60, "t": 1.531, "actor": "W1", "kind": "state", "state": "done"}, {"seq": 61, "t": 1.531, "actor": "W2", "kind": "state", "state": "writing"}, {"seq": 62, "t": 1.667, "actor": "W2", "kind": "access", "action": "write", "value": 6}, {"seq": 63, "t": 1.667, "actor": "W2", "kind": "state", "state": "thinking"}, {"seq": 64, "t": 1.667, "actor": "W2", "kind": "state", "state": "done"}, {"seq": 65, "t": 1.667, "actor": "R1", "kind": "state", "state": "reading"}, {"seq": 66, "t": 1.667, "actor": "R1", "kind": "access", "action": "read", "value": 6}, {"seq": 67, "t": 1.667, "actor": "R2", "kind": "state", "state": "reading"}, {"seq": 68, "t": 1.667, "actor": "R2", "kind": "access", "action": "read", "value": 6}, {"seq": 69, "t": 1.667, "actor": "R3", "kind": "state", "state": "reading"}, {"seq": 70, "t": 1.667, "actor": "R3", "kind": "access", "action": "read", "value": 6}, {"seq": 71, "t": 1.667, "actor": "R4", "kind": "state", "state": "reading"}, {"seq": 72, "t": 1.667, "actor": "R4", "kind": "access", "action": "read", "value": 6}, {"seq": 73, "t": 1.743, "actor": "R4", "kind": "state", "state": "thinking"}, {"seq": 74, "t": 1.743, "actor": "R4", "kind": "state", "state": "thinking"}, {"seq": 75, "t": 1.766, "actor": "R3", "kind": "state", "state": "thinking"}, {"seq": 76, "t": 1.766, "actor": "R3", "kind": "state", "state": "thinking"}, {"seq": 77, "t": 1.772, "actor": "R1", "kind": "state", "state": "thinking"}, {"seq": 78, "t": 1.772, "actor": "R1", "kind": "state", "state": "thinking"}, {"seq": 79, "t": 1.839, "actor": "R4", "kind": "state", "state": "waiting"}, {"seq": 80, "t": 1.839, "actor": "R4", "kind": "state", "state": "reading"}, {"seq": 81, "t": 1.839, "actor": "R4", "kind": "access", "action": "read", "value": 6}, {"seq": 82, "t": 1.908, "actor": "R4", "kind": "state", "state": "thinking"}, {"seq": 83, "t": 1.908, "actor": "R4", "kind": "state", "state": "done"}, {"seq": 84, "t": 1.923, "actor": "R2", "kind": "state", "state": "thinking"}, {"seq": 85, "t": 1.923, "actor": "R2", "kind": "state", "state": "done"}, {"seq": 86, "t": 2.003, "actor": "R3", "kind": "state", "state": "waiting"}, {"seq": 87, "t": 2.003, "actor": "R3", "kind": "state", "state": "reading"}, {"seq": 88, "t": 2.003, "actor": "R3", "kind": "access", "action": "read", "value": 6}, {"seq": 89, "t": 2.003, "actor": "R1", "kind": "state", "state": "waiting"}, {"seq": 90, "t": 2.003, "actor": "R1", "kind": "state", "state": "reading"}, {"seq": 91, "t": 2.003, "actor": "R1", "kind": "access", "action": "read", "value": 6}, {"seq": 92, "t": 2.105, "actor": "R1", "kind": "state", "state": "thinking"}, {"seq": 93, "t": 2.105, "actor": "R1", "kind": "state", "state": "done"}, {"seq": 94, "t": 2.155, "actor": "R3", "kind": "state", "state": "thinking"}, {"seq": 95, "t": 2.155, "actor": "R3", "kind": "state", "state": "done"}]};
+const E = DATA.events, MODE = DATA.mode;
+const COLORS = {idle:'#94a3b8',thinking:'#94a3b8',waiting:'#f59e0b',hungry:'#f59e0b',
+  acquiring:'#a78bfa',reading:'#22c55e',writing:'#ef4444',eating:'#22c55e',
+  releasing:'#38bdf8',done:'#475569'};
+let idx = 0, timer = null;
+const $ = id => document.getElementById(id);
+$('slider').max = E.length;
+
+// Re-compute the whole world from the first n recorded events.
+function compute(n){
+  const st = {}, forks = {};
+  DATA.actors.forEach(a => st[a] = 'idle');
+  for (let f = 0; f < DATA.forks; f++) forks[f] = null;
+  for (let i = 0; i < n; i++){
+    const e = E[i];
+    if (e.kind === 'state') st[e.actor] = e.state;
+    else if (e.kind === 'fork') forks[e.fork] = e.owner;
+  }
+  return {st, forks};
+}
+function lastAccess(n){
+  for (let i = n - 1; i >= 0; i--) if (E[i].kind === 'access') return E[i];
+  return null;
+}
+function legend(){
+  return '<div class="legend">' + Object.keys(COLORS).filter(k=>!['idle'].includes(k))
+    .map(k => `<span><i style="background:${COLORS[k]}"></i>${k}</span>`).join('') + '</div>';
+}
+function renderRW(st){
+  let r = 0, w = 0;
+  for (const a in st){ if (st[a]==='reading') r++; if (st[a]==='writing') w++; }
+  const bad = w > 1 || (w > 0 && r > 0);
+  const acc = lastAccess(idx);
+  const status = bad ? 'VIOLATION - mutual exclusion broken!' :
+    w ? 'LOCKED: 1 writer inside critical section' :
+    r ? 'SHARED: ' + r + ' reader(s) inside critical section' : 'FREE: nobody inside';
+  const col = bad ? '#ef4444' : w ? '#f97316' : r ? '#22c55e' : '#475569';
+  let h = legend() + '<div>';
+  for (const a in st)
+    h += `<div class="card" style="background:${COLORS[st[a]]}">${a}<br><small>${st[a]}</small></div>`;
+  h += `</div><div class="res" style="border-color:${col}"><b>Shared resource (counter)</b><br>
+    value = ${acc ? acc.value : 0}<br>Status: <b style="color:${col}">${status}</b><br>
+    Active readers: ${r} &nbsp; Active writers: ${w} &nbsp;
+    Waiting: ${Object.values(st).filter(s=>s==='waiting').length}</div>`;
+  return h;
+}
+function renderDP(st, forks){
+  const N = DATA.actors.length, cx = 220, cy = 210, R = 135;
+  let s = '<svg viewBox="0 0 440 420" width="100%"><circle cx="220" cy="210" r="70" fill="#334155"/>' +
+          '<text x="220" y="215" text-anchor="middle" fill="#94a3b8" font-size="13">table</text>';
+  const ang = i => (-Math.PI/2) + i * 2*Math.PI/N;
+  const P = i => [cx + R*Math.cos(ang(i)), cy + R*Math.sin(ang(i))];
+  for (let f = 0; f < N; f++){            // fork f lies between philosopher f and f+1
+    const a = ang(f) + Math.PI/N, home = [cx + 85*Math.cos(a), cy + 85*Math.sin(a)];
+    let pos = home, color = '#e2e8f0', label = 'F' + f;
+    if (forks[f] !== null){
+      const p = P(forks[f]); color = COLORS[st['P'+forks[f]]];
+      pos = [home[0]*0.45 + p[0]*0.55, home[1]*0.45 + p[1]*0.55];
+      label = 'F' + f + '\u2192P' + forks[f];
+    }
+    s += `<circle cx="${pos[0]}" cy="${pos[1]}" r="11" fill="${color}" stroke="#0f172a"/>
+          <text x="${pos[0]}" y="${pos[1]+26}" text-anchor="middle" fill="#e2e8f0" font-size="11">${label}</text>`;
+  }
+  for (let i = 0; i < N; i++){
+    const [x, y] = P(i), name = 'P' + i;
+    s += `<circle cx="${x}" cy="${y}" r="34" fill="${COLORS[st[name]]}"/>
+          <text x="${x}" y="${y-2}" text-anchor="middle" font-weight="700" fill="#0f172a">${name}</text>
+          <text x="${x}" y="${y+14}" text-anchor="middle" font-size="11" fill="#0f172a">${st[name]}</text>`;
+  }
+  return legend() + s + '</svg>';
+}
+function render(){
+  const {st, forks} = compute(idx);
+  $('stage').innerHTML = MODE === 'rw' ? renderRW(st) : renderDP(st, forks);
+  let l = '';
+  for (let i = 0; i < idx; i++){
+    const e = E[i];
+    let msg = e.kind === 'state' ? e.actor + ' -> ' + e.state :
+              e.kind === 'fork' ? 'fork ' + e.fork + (e.owner === null ? ' released' : ' taken by P' + e.owner) :
+              e.actor + ' ' + (e.action || 'access') + ' value=' + e.value;
+    l += `<div class="${i===idx-1?'last':''}">[${e.t.toFixed(3)}s] ${msg}</div>`;
+  }
+  $('log').innerHTML = l; $('log').scrollTop = $('log').scrollHeight;
+  $('slider').value = idx;
+  $('clock').textContent = idx + '/' + E.length + (idx ? '  t=' + E[idx-1].t + 's' : '');
+}
+function tick(){ if (idx < E.length) { idx++; render(); } else pause(); }
+function play(){ pause(); if (idx >= E.length) idx = 0;
+  timer = setInterval(tick, 400 / parseFloat($('speed').value)); $('play').textContent = 'Pause'; }
+function pause(){ clearInterval(timer); timer = null; $('play').textContent = 'Play'; }
+$('play').onclick = () => timer ? pause() : play();
+$('step').onclick = () => { pause(); tick(); };
+$('reset').onclick = () => { pause(); idx = 0; render(); };
+$('speed').onchange = () => { if (timer) play(); };
+$('slider').oninput = e => { pause(); idx = +e.target.value; render(); };
+render();
+</script></body></html>
